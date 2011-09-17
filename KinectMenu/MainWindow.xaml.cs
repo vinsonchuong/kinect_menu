@@ -17,11 +17,28 @@ namespace KinectMenu
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    /// 
     public partial class MainWindow : Window
     {
+        KinectGestureDetect kgd;
+
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e){
+            try{
+                kgd = new KinectGestureDetect(kinectCanvas, gesturesCanvas, kinectDisplay, detectedGestures, rightHandPosition);
+                kgd.KinectLoad();
+            }catch(Exception ex){
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            kgd.KinectClose();
         }
     }
 }

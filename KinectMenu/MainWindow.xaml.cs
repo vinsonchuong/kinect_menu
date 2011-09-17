@@ -131,7 +131,26 @@ namespace KinectMenu
 
         #endregion Initialization
 
-        #region Event Handlers
+        #region Mouse Event Handlers
+
+        private void HandleHover(object sender, MouseEventArgs e)
+        {
+            GetActiveMenu().SelectedItem = sender;
+        }
+
+        private void HandleActiveClick(object sender, MouseEventArgs e)
+        {
+            var itemTitle = (string)((ListBoxItem)sender).Content;
+            PushMenu(MenuHierarchy[itemTitle]);
+        }
+
+        private void HandleBreadcrumbClick(object sender, MouseEventArgs e)
+        {
+        }
+
+        #endregion Mouse Event Handlers
+
+        #region Kinect Event Handlers
 
         private void HandleHover(double y)
         {
@@ -143,7 +162,6 @@ namespace KinectMenu
 
         private void HandleLeftSwipe(double y)
         {
-            HandleHover(y);
             var menu = GetActiveMenu();
             var item = (ListBoxItem) menu.SelectedItem;
             if (item != null)
@@ -184,6 +202,8 @@ namespace KinectMenu
                     Padding = new Thickness(10),
                     FontSize = 32.0
                 };
+                node.MouseEnter += HandleHover;
+                node.MouseUp += HandleActiveClick;
                 menu.Items.Add(node);
             }
 

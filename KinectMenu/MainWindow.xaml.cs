@@ -20,8 +20,6 @@ namespace KinectMenu
     {
         #region Constants
 
-
-
         private static readonly Dictionary<String, IEnumerable<string>> MenuHierarchy =
             new Dictionary<string, IEnumerable<string>>
         {

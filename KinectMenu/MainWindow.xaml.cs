@@ -20,85 +20,101 @@ namespace KinectMenu
     {
         #region Constants
 
-        private static readonly OrderedDictionary MenuHierarchy = new OrderedDictionary
+
+
+        private static readonly Dictionary<String, IEnumerable<string>> MenuHierarchy =
+            new Dictionary<string, IEnumerable<string>>
         {
             {
-                "Games",
-                new OrderedDictionary
+                "Root",
+                new List<string>
                 {
-                    {"Dance Central", null},
-                    {"Kinectimals", null},
-                    {"Carnival Games", null},
-                    {"Kinect Sports", null},
-                    {"Kung Fu Panda", null},
-                    {"Angry Birds", null}
+                    "Games",
+                    "Movies",
+                    "Music",
+                    "Apps",
+                    "Settings"
+                }
+            },
+            {
+                "Games",
+                new List<string>
+                {
+                    "Dance Central",
+                    "Kinectimals",
+                    "Carnival Games",
+                    "Kinect Sports",
+                    "Kung Fu Panda",
+                    "Angry Birds"
                 }
             },
             {
                 "Movies",
-                new OrderedDictionary
+                new List<string>
                 {
-                    {"Everything Must Go", null},
-                    {"Something Borrowed", null},
-                    {"Rango", null},
-                    {"Limitless", null},
-                    {"Rio", null},
-                    {"The Lincoln Lawyer", null}
+                    "Everything Must Go",
+                    "Something Borrowed",
+                    "Rango",
+                    "Limitless",
+                    "Rio",
+                    "The Lincoln Lawyer"
                 }
             },
             {
                 "Music",
-                new OrderedDictionary
+                new List<string>
                 {
-                    {
-                        "Philipp Glass - The Hours",
-                        new OrderedDictionary
-                        {
-                            {"The Poet Acts", null},
-                            {"Morning Passages", null},
-                            {"Something She Has to Do", null},
-                            {"For Your Own Benefit", null},
-                            {"Vanessa and the Changelings", null},
-                            {"I'm Going to Make a Cake", null},
-                            {"An Unwelcomed Friend", null}
-                        }
-                    },
-                    {
-                        "Novalima - Afro",
-                        new OrderedDictionary
-                        {
-                            {"Chinchivi", null},
-                            {"Bandolero", null},
-                            {"Malato", null},
-                            {"Machete", null},
-                            {"Candela", null}
-                        }
-                    },
-                    {
-                        "Amon Tobin - Permutation",
-                        new OrderedDictionary
-                        {
-                            {"Like Regular Chickens", null},
-                            {"Bridge", null},
-                            {"Reanimator", null},
-                            {"Sordid", null},
-                            {"Nightlife", null},
-                            {"Escape", null}
-                        }
-                    }
+                    "Philipp Glass - The Hours",
+                    "Novalima - Afro",
+                    "Amon Tobin - Permutation"
+                }
+            },
+            {
+                "Philipp Glass - The Hours",
+                new List<string>
+                {
+                    "The Poet Acts",
+                    "Morning Passages",
+                    "Something She Has to Do",
+                    "For Your Own Benefit",
+                    "Vanessa and the Changelings",
+                    "I'm Going to Make a Cake",
+                    "An Unwelcomed Friend"
+                }
+            },
+            {
+                "Novalima - Afro",
+                new List<string>
+                {
+                    "Chinchivi",
+                    "Bandolero",
+                    "Malato",
+                    "Machete",
+                    "Candela"
+                }
+            },
+            {
+                "Amon Tobin - Permutation",
+                new List<string>
+                {
+                    "Like Regular Chickens",
+                    "Bridge",
+                    "Reanimator",
+                    "Sordid",
+                    "Nightlife",
+                    "Escape"
                 }
             },
             {
                 "Apps",
-                new OrderedDictionary
+                new List<string>
                 {
-                    {"Facebook", null},
-                    {"Google+", null},
-                    {"Twitter", null},
-                    {"Yelp", null}
+                    "Facebook",
+                    "Google+",
+                    "Twitter",
+                    "Yelp"
                 }
-            },
-            {"Settings", null}
+            }
         };
 
         #endregion Constants
@@ -112,12 +128,43 @@ namespace KinectMenu
         public MainWindow()
         {
             InitializeComponent();
-            PushMenu(MenuHierarchy.Keys.Cast<string>());
+            PushMenu(MenuHierarchy["Root"]);
         }
 
         #endregion Initialization
 
+        #region Event Handlers
+
+        private void HandleHover(double y)
+        {
+            var menu = GetActiveMenu();
+            var item = SelectByY(y);
+            if (item != null)
+                menu.SelectedItem = item;
+        }
+
+        private void HandleLeftSwipe(double y)
+        {
+            HandleHover(y);
+            var menu = GetActiveMenu();
+            var item = (ListBoxItem) menu.SelectedItem;
+            if (item != null)
+                PushMenu(MenuHierarchy[(string)item.Content]);
+        }
+
+        private void HandleRightSwipe(double y)
+        {
+            PopMenu();
+        }
+
+        #endregion Event Handlers
+
         #region Menu Manipulation Helpers
+
+        private ListBox GetActiveMenu()
+        {
+            return (ListBox)ActiveContainer.Children[0];
+        }
 
         private void PushMenu(IEnumerable<string> items)
         {
@@ -160,16 +207,15 @@ namespace KinectMenu
             ActiveContainer.Children.Add(menu);
         }
 
-        public void SelectByY(double y)
+        private ListBoxItem SelectByY(double y)
         {
-            var menu = (ListBox)ActiveContainer.Children[0];
-            Func<ListBoxItem, bool> isHit = (item) =>
-            {
-                var top = PointToScreen(new Point(0, 0)).Y;
-                var bottom = top + item.ActualHeight;
-                return y >= top && y <= bottom;
-            };
-            var selected = (from item in menu where isHit((ListBoxItem)item) select (ListBoxItem)item).First(
+            var menu = GetActiveMenu();
+            return (
+                from ListBoxItem item in menu.Items
+                let top = PointToScreen(new Point(0, 0)).Y
+                let bottom = top + item.ActualHeight
+                where y >= top && y <= bottom select item
+            ).FirstOrDefault();
         }
 
         #endregion

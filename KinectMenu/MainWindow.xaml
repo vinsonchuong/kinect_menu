@@ -1,22 +1,38 @@
-﻿<Window x:Class="KinectMenu.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Width="1280" Height="720" Loaded="Window_Loaded" Closed="Window_Closed">
-    <Grid Width="1280" Height="720">
-        <Grid Width="800" Height="600" Margin="32,38,448,82">
-            <Canvas Name="kinectCanvas"></Canvas>
-            <Canvas Name="gesturesCanvas"></Canvas>
-            <Rectangle Stroke="Black" StrokeThickness="1" />
+<Window x:Class="KinectMenu.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:Controls="clr-namespace:Coding4Fun.Kinect.Wpf.Controls;assembly=Coding4Fun.Kinect.Wpf"
+    Title="MainWindow"
+    Background="Black"
+    Width="1280"
+    Height="720" Loaded="Window_Loaded" Closed="Window_Closed">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid
+            Name="BreadcrumbContainer"
+            Grid.Row="0"
+            Grid.Column="0"
+            Opacity="0.7"
+            RenderTransformOrigin="0.5,0.5"
+            Visibility="Collapsed">
+            <Grid.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform ScaleX="0.7" ScaleY="0.7" />
+                    <TranslateTransform />
+                </TransformGroup>
+            </Grid.RenderTransform>
         </Grid>
-        <Grid Width="320" Height="240" Margin="896,398,64,82">
-            <Image Name="kinectDisplay"></Image>
-            <Rectangle Stroke="Black" StrokeThickness="1" />
-        </Grid>
-        <Grid Margin="886,28,74,442">
-            <ListBox Name="detectedGestures" FontSize="15" Margin="10,10,-10,6"></ListBox>
-        </Grid>
-        <Grid Height="50" Margin="896,310,84,360">
-            <TextBlock Name="rightHandPosition" Margin="0,0,-20,0"></TextBlock>
-        </Grid>
+        <Grid
+            Name="ActiveContainer"
+            Grid.Row="0"
+            Grid.Column="1"
+        />
     </Grid>
 </Window>

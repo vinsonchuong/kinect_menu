@@ -26,7 +26,7 @@ namespace KinectMenu
         ListBox detectedGestures;
         TextBlock rightHandPosition;
 
-        public KinectGestureDetect(Canvas kinectCanvas, Canvas gesturesCanvas, Image kinectDisplay, ListBox detectedGestures, TextBlock rightHandPosition)
+        public KinectGestureDetect()
         {
             this.kinectRuntime = new Runtime();
             this.streamManager = new ColorStreamManager();
@@ -34,25 +34,25 @@ namespace KinectMenu
             this.barycenterHelper = new BarycenterHelper();
             this.algorithmicPostureRecognizer = new AlgorithmicPostureDetector();
 
-            this.kinectCanvas = kinectCanvas;
-            this.gesturesCanvas = gesturesCanvas;
-            this.kinectDisplay = kinectDisplay;
-            this.detectedGestures = detectedGestures;
-            this.rightHandPosition = rightHandPosition;
+            //this.kinectCanvas = kinectCanvas;
+            //this.gesturesCanvas = gesturesCanvas;
+            //this.kinectDisplay = kinectDisplay;
+            //this.detectedGestures = detectedGestures;
+            //this.rightHandPosition = rightHandPosition;
         }
 
         public void KinectLoad()
         {
-            kinectRuntime.VideoFrameReady += new EventHandler<ImageFrameReadyEventArgs>(KinectRuntime_VideoFrameReady);
+            // kinectRuntime.VideoFrameReady += new EventHandler<ImageFrameReadyEventArgs>(KinectRuntime_VideoFrameReady);
             kinectRuntime.SkeletonFrameReady += new EventHandler<SkeletonFrameReadyEventArgs>(kinectRuntime_SkeletonFrameReady);
 
             kinectRuntime.Initialize(RuntimeOptions.UseSkeletalTracking | RuntimeOptions.UseColor);
 
             kinectRuntime.VideoStream.Open(ImageStreamType.Video, 2, ImageResolution.Resolution640x480, ImageType.Color);
 
-            swipeGestureRecognizer.OnGestureDetected += OnGestureDetected;
+            // swipeGestureRecognizer.OnGestureDetected += OnGestureDetected;
 
-            skeletonDisplayManager = new SkeletonDisplayManager(kinectRuntime.SkeletonEngine, kinectCanvas);
+            // skeletonDisplayManager = new SkeletonDisplayManager(kinectRuntime.SkeletonEngine, kinectCanvas);
 
             MakeSmoothMove();
         }
@@ -117,7 +117,7 @@ namespace KinectMenu
                 }
                 algorithmicPostureRecognizer.TrackPostures(skeleton);
             }
-            skeletonDisplayManager.Draw(frame);
+            // skeletonDisplayManager.Draw(frame);
         }
 
         public void getJointPosition(Joint joint)

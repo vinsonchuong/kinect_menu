@@ -34,5 +34,10 @@
             Grid.Row="0"
             Grid.Column="1"
         />
+        <Canvas Name="kinectCanvas"
+            Grid.Row="0"
+            Grid.Column="0"
+            Grid.ColumnSpan="3">
+        </Canvas>
     </Grid>
 </Window>

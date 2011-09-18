@@ -21,12 +21,18 @@ namespace KinectMenu
         SkeletonDisplayManager skeletonDisplayManager;
 
         Canvas kinectCanvas;
-        Canvas gesturesCanvas;
-        Image kinectDisplay;
-        ListBox detectedGestures;
-        TextBlock rightHandPosition;
+        //Canvas gesturesCanvas;
+        //Image kinectDisplay;
+        //ListBox detectedGestures;
+        //TextBlock rightHandPosition;
+  
+        Action<double> leftSwifeHandler;
+        Action<double> rightSwifeHandler;
+        Action<double> hoverHandler;
 
-        public KinectGestureDetect()
+        float rightHandY;
+
+        public KinectGestureDetect(Action<double> leftSwifeHandler, Action<double> rightSwifeHandler, Action<double> hoverHandler, Canvas kinectCanvas)
         {
             this.kinectRuntime = new Runtime();
             this.streamManager = new ColorStreamManager();
@@ -34,11 +40,15 @@ namespace KinectMenu
             this.barycenterHelper = new BarycenterHelper();
             this.algorithmicPostureRecognizer = new AlgorithmicPostureDetector();
 
-            //this.kinectCanvas = kinectCanvas;
+            this.kinectCanvas = kinectCanvas;
             //this.gesturesCanvas = gesturesCanvas;
             //this.kinectDisplay = kinectDisplay;
             //this.detectedGestures = detectedGestures;
             //this.rightHandPosition = rightHandPosition;
+
+            this.leftSwifeHandler = leftSwifeHandler;
+            this.rightSwifeHandler = rightSwifeHandler;
+            this.hoverHandler = hoverHandler;
         }
 
         public void KinectLoad()
@@ -50,9 +60,9 @@ namespace KinectMenu
 
             kinectRuntime.VideoStream.Open(ImageStreamType.Video, 2, ImageResolution.Resolution640x480, ImageType.Color);
 
-            // swipeGestureRecognizer.OnGestureDetected += OnGestureDetected;
+            swipeGestureRecognizer.OnGestureDetected += OnGestureDetected;
 
-            // skeletonDisplayManager = new SkeletonDisplayManager(kinectRuntime.SkeletonEngine, kinectCanvas);
+            skeletonDisplayManager = new SkeletonDisplayManager(kinectRuntime.SkeletonEngine, kinectCanvas);
 
             MakeSmoothMove();
         }
@@ -76,9 +86,15 @@ namespace KinectMenu
 
         public void OnGestureDetected(string gesture)
         {
-            int pos = detectedGestures.Items.Add(string.Format("{0} : {1}", gesture, DateTime.Now));
-
-            detectedGestures.SelectedIndex = pos;
+            //int pos = detectedGestures.Items.Add(string.Format("{0} : {1}", gesture, DateTime.Now));
+            //detectedGestures.SelectedIndex = pos;
+            if (gesture.Equals("SwipeToRight")){
+                rightSwifeHandler(rightHandY);
+                Console.WriteLine("SwipeToRight");
+            }else if (gesture.Equals("SwipeToLeft")){
+                leftSwifeHandler(rightHandY);
+                Console.WriteLine("SwipeToLeft");
+            }
         }
 
         public void kinectRuntime_SkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
@@ -112,24 +128,26 @@ namespace KinectMenu
                         swipeGestureRecognizer.Add(joint.Position, kinectRuntime.SkeletonEngine);
 
                         // Get position of joint
-                        getJointPosition(joint);
+                        setRightHandPosition(joint);
                     }
                 }
                 algorithmicPostureRecognizer.TrackPostures(skeleton);
             }
-            // skeletonDisplayManager.Draw(frame);
+            skeletonDisplayManager.Draw(frame);
         }
 
-        public void getJointPosition(Joint joint)
+        public void setRightHandPosition(Joint joint)
         {
             Joint aJoint = joint.ScaleTo(1280, 720, 0.5f, 0.5f);
-            rightHandPosition.Text = "X: " + aJoint.Position.X + ", Y: " + aJoint.Position.Y;
+            rightHandY = aJoint.Position.Y;
+            Console.WriteLine("Y: " + rightHandY);
+            hoverHandler(rightHandY);
         }
 
-        public void KinectRuntime_VideoFrameReady(object sender, ImageFrameReadyEventArgs e)
-        {
-            kinectDisplay.Source = streamManager.Update(e);
-        }
+        //public void KinectRuntime_VideoFrameReady(object sender, ImageFrameReadyEventArgs e)
+        //{
+        //    kinectDisplay.Source = streamManager.Update(e);
+        //}
 
         public void KinectClose()
         {

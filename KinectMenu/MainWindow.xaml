@@ -7,7 +7,7 @@
     Background="Black"
     Width="1280"
     Height="720" Loaded="Window_Loaded" Closed="Window_Closed">
-    <Grid>
+    <Grid Name="Window">
         <Grid.RowDefinitions>
             <RowDefinition />
         </Grid.RowDefinitions>

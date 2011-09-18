@@ -130,13 +130,11 @@ namespace KinectMenu
 
         #region Initialization
 
-
         public MainWindow()
         {
             InitializeComponent();
 
             PushMenu(MenuHierarchy["Root"]);
-
         }
 
         #endregion Initialization
@@ -165,15 +163,17 @@ namespace KinectMenu
 
         #region Kinect Event Handlers
 
-        private void HandleHover(double y)
+        private void HandleHover(Point pt)
         {
             var menu = GetActiveMenu();
-            var item = SelectByY(y);
+            var item = SelectByY(pt);
             if (item != null)
+            {
                 menu.SelectedItem = item;
+            }
         }
 
-        private void HandleLeftSwipe(double y)
+        private void HandleLeftSwipe(Point pt)
         {
             var menu = GetActiveMenu();
             var item = (ListBoxItem)menu.SelectedItem;
@@ -181,7 +181,7 @@ namespace KinectMenu
                 PushMenu(item);
         }
 
-        private void HandleRightSwipe(double y)
+        private void HandleRightSwipe(Point pt)
         {
             PopMenu();
         }
@@ -258,14 +258,19 @@ namespace KinectMenu
             }
         }
 
-        private ListBoxItem SelectByY(double y)
+        private ListBoxItem SelectByY(Point pt)
         {
-            var menu = GetActiveMenu();
+            // Console.WriteLine("Kinect X,Y: " + pt.X + "," + pt.Y);
+            var menu = GetActiveMenu();            
             return (
                 from ListBoxItem item in menu.Items
-                let top = item.PointToScreen(new Point(0, 0)).Y
+                // Change it to get distance from window, not screen
+                let top = item.TranslatePoint(new Point(0, 0), Window).Y 
+                let left = item.TranslatePoint(new Point(0, 0), Window).X
                 let bottom = top + item.ActualHeight
-                where y >= top && y <= bottom select item
+                let right = left + item.ActualWidth
+                where ((left <= pt.X && pt.X <= right) && (top <= pt.Y && pt.Y <= bottom))
+                select item
             ).FirstOrDefault();
         }
 

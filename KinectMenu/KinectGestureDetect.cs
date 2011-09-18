@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
+using System.Windows;
 using System.Windows.Controls;
 using Kinect.Toolbox;
 using Microsoft.Research.Kinect.Nui;
@@ -21,18 +24,16 @@ namespace KinectMenu
         SkeletonDisplayManager skeletonDisplayManager;
 
         Canvas kinectCanvas;
-        //Canvas gesturesCanvas;
         Image kinectDisplay;
-        //ListBox detectedGestures;
-        //TextBlock rightHandPosition;
   
-        Action<double> leftSwifeHandler;
-        Action<double> rightSwifeHandler;
-        Action<double> hoverHandler;
+        Action<Point> leftSwifeHandler;
+        Action<Point> rightSwifeHandler;
+        Action<Point> hoverHandler;
 
-        float rightHandY;
+        // Position of rightHand
+        Point pt;
 
-        public KinectGestureDetect(Action<double> leftSwifeHandler, Action<double> rightSwifeHandler, Action<double> hoverHandler, Canvas kinectCanvas, Image kinectDisplay)
+        public KinectGestureDetect(Action<Point> leftSwifeHandler, Action<Point> rightSwifeHandler, Action<Point> hoverHandler, Canvas kinectCanvas, Image kinectDisplay)
         {
             this.kinectRuntime = new Runtime();
             this.streamManager = new ColorStreamManager();
@@ -55,9 +56,7 @@ namespace KinectMenu
         {
             kinectRuntime.VideoFrameReady += new EventHandler<ImageFrameReadyEventArgs>(KinectRuntime_VideoFrameReady);
             kinectRuntime.SkeletonFrameReady += new EventHandler<SkeletonFrameReadyEventArgs>(kinectRuntime_SkeletonFrameReady);
-
             kinectRuntime.Initialize(RuntimeOptions.UseSkeletalTracking | RuntimeOptions.UseColor);
-
             kinectRuntime.VideoStream.Open(ImageStreamType.Video, 2, ImageResolution.Resolution640x480, ImageType.Color);
 
             swipeGestureRecognizer.OnGestureDetected += OnGestureDetected;
@@ -89,10 +88,10 @@ namespace KinectMenu
             //int pos = detectedGestures.Items.Add(string.Format("{0} : {1}", gesture, DateTime.Now));
             //detectedGestures.SelectedIndex = pos;
             if (gesture.Equals("SwipeToRight")){
-                rightSwifeHandler(rightHandY);
+                rightSwifeHandler(pt);
                 Console.WriteLine("SwipeToRight");
             }else if (gesture.Equals("SwipeToLeft")){
-                leftSwifeHandler(rightHandY);
+                leftSwifeHandler(pt);
                 Console.WriteLine("SwipeToLeft");
             }
         }
@@ -127,7 +126,7 @@ namespace KinectMenu
                     {
                         swipeGestureRecognizer.Add(joint.Position, kinectRuntime.SkeletonEngine);
 
-                        // Get position of joint
+                        // Get position of joint and Save it to global variable
                         setRightHandPosition(joint);
                     }
                 }
@@ -138,11 +137,11 @@ namespace KinectMenu
 
         public void setRightHandPosition(Joint joint)
         {
-            Joint aJoint = joint.ScaleTo(1280, 720, 0.5f, 0.5f);
-            rightHandY = aJoint.Position.Y;
-            Console.WriteLine("Y: " + rightHandY);
+            Joint aJoint = joint.ScaleTo(1280, 720);
+            
+            pt = new Point(aJoint.Position.X, aJoint.Position.Y);
 
-            hoverHandler(rightHandY);
+            hoverHandler(pt);
         }
 
         public void KinectRuntime_VideoFrameReady(object sender, ImageFrameReadyEventArgs e)

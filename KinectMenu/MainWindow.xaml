@@ -33,8 +33,16 @@
         <Grid
             Name="ActiveContainer"
             Grid.Row="0"
-            Grid.Column="1"
-        />
+            Grid.Column="1"/>
+        <Grid
+            Name="KinectInfoContainer"
+            Grid.Row="0"
+            Grid.Column="2">
+            <Image
+                Name="kinectDisplay"
+                Width="320"
+                Height="240"/>
+        </Grid>
         <Canvas Name="kinectCanvas"
             Grid.Row="0"
             Grid.Column="0"

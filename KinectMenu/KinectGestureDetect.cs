@@ -22,7 +22,7 @@ namespace KinectMenu
 
         Canvas kinectCanvas;
         //Canvas gesturesCanvas;
-        //Image kinectDisplay;
+        Image kinectDisplay;
         //ListBox detectedGestures;
         //TextBlock rightHandPosition;
   
@@ -32,7 +32,7 @@ namespace KinectMenu
 
         float rightHandY;
 
-        public KinectGestureDetect(Action<double> leftSwifeHandler, Action<double> rightSwifeHandler, Action<double> hoverHandler, Canvas kinectCanvas)
+        public KinectGestureDetect(Action<double> leftSwifeHandler, Action<double> rightSwifeHandler, Action<double> hoverHandler, Canvas kinectCanvas, Image kinectDisplay)
         {
             this.kinectRuntime = new Runtime();
             this.streamManager = new ColorStreamManager();
@@ -42,7 +42,7 @@ namespace KinectMenu
 
             this.kinectCanvas = kinectCanvas;
             //this.gesturesCanvas = gesturesCanvas;
-            //this.kinectDisplay = kinectDisplay;
+            this.kinectDisplay = kinectDisplay;
             //this.detectedGestures = detectedGestures;
             //this.rightHandPosition = rightHandPosition;
 
@@ -53,7 +53,7 @@ namespace KinectMenu
 
         public void KinectLoad()
         {
-            // kinectRuntime.VideoFrameReady += new EventHandler<ImageFrameReadyEventArgs>(KinectRuntime_VideoFrameReady);
+            kinectRuntime.VideoFrameReady += new EventHandler<ImageFrameReadyEventArgs>(KinectRuntime_VideoFrameReady);
             kinectRuntime.SkeletonFrameReady += new EventHandler<SkeletonFrameReadyEventArgs>(kinectRuntime_SkeletonFrameReady);
 
             kinectRuntime.Initialize(RuntimeOptions.UseSkeletalTracking | RuntimeOptions.UseColor);
@@ -141,13 +141,14 @@ namespace KinectMenu
             Joint aJoint = joint.ScaleTo(1280, 720, 0.5f, 0.5f);
             rightHandY = aJoint.Position.Y;
             Console.WriteLine("Y: " + rightHandY);
+
             hoverHandler(rightHandY);
         }
 
-        //public void KinectRuntime_VideoFrameReady(object sender, ImageFrameReadyEventArgs e)
-        //{
-        //    kinectDisplay.Source = streamManager.Update(e);
-        //}
+        public void KinectRuntime_VideoFrameReady(object sender, ImageFrameReadyEventArgs e)
+        {
+            kinectDisplay.Source = streamManager.Update(e);
+        }
 
         public void KinectClose()
         {

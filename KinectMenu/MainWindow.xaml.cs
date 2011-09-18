@@ -146,16 +146,19 @@ namespace KinectMenu
         private void HandleHover(object sender, MouseEventArgs e)
         {
             GetActiveMenu().SelectedItem = sender;
+            e.Handled = true;
         }
 
         private void HandleActiveClick(object sender, MouseEventArgs e)
         {
-            var itemTitle = (string)((ListBoxItem)sender).Content;
-            PushMenu(MenuHierarchy[itemTitle]);
+            PushMenu((ListBoxItem)sender);
+            e.Handled = true;
         }
 
         private void HandleBreadcrumbClick(object sender, MouseEventArgs e)
         {
+            PopMenu();
+            e.Handled = true;
         }
 
         #endregion Mouse Event Handlers
@@ -173,9 +176,9 @@ namespace KinectMenu
         private void HandleLeftSwipe(double y)
         {
             var menu = GetActiveMenu();
-            var item = (ListBoxItem) menu.SelectedItem;
+            var item = (ListBoxItem)menu.SelectedItem;
             if (item != null)
-                PushMenu(MenuHierarchy[(string)item.Content]);
+                PushMenu(item);
         }
 
         private void HandleRightSwipe(double y)
@@ -190,6 +193,23 @@ namespace KinectMenu
         private ListBox GetActiveMenu()
         {
             return (ListBox)ActiveContainer.Children[0];
+        }
+
+        private void PushMenu(string title)
+        {
+            if (MenuHierarchy.ContainsKey(title))
+                PushMenu(MenuHierarchy[title]);
+            else
+            {
+                ActiveContainer.Children.Clear();
+                BreadcrumbContainer.Children.Clear();
+                PushMenu("Root");
+            }
+        }
+
+        private void PushMenu(ListBoxItem selectedItem)
+        {
+            PushMenu((string)selectedItem.Content);
         }
 
         private void PushMenu(IEnumerable<string> items)
@@ -228,11 +248,14 @@ namespace KinectMenu
 
         private void PopMenu()
         {
-            var popIndex = BreadcrumbContainer.Children.Count - 1;
-            var menu = BreadcrumbContainer.Children[popIndex];
-            BreadcrumbContainer.Children.RemoveAt(popIndex);
-            ActiveContainer.Children.Clear();
-            ActiveContainer.Children.Add(menu);
+            if (BreadcrumbContainer.Children.Count > 0)
+            {
+                var popIndex = BreadcrumbContainer.Children.Count - 1;
+                var menu = BreadcrumbContainer.Children[popIndex];
+                BreadcrumbContainer.Children.RemoveAt(popIndex);
+                ActiveContainer.Children.Clear();
+                ActiveContainer.Children.Add(menu);
+            }
         }
 
         private ListBoxItem SelectByY(double y)

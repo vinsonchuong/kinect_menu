@@ -3,6 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:Controls="clr-namespace:Coding4Fun.Kinect.Wpf.Controls;assembly=Coding4Fun.Kinect.Wpf"
     Title="MainWindow"
+    MouseUp="HandleBreadcrumbClick"
     Background="Black"
     Width="1280"
     Height="720" Loaded="Window_Loaded" Closed="Window_Closed">

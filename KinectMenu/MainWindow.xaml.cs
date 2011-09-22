@@ -10,6 +10,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -25,7 +26,7 @@ namespace KinectMenu
         {
             {
                 "Root",
-                new List<string>
+                new string[]
                 {
                     "Games",
                     "Movies",
@@ -36,7 +37,7 @@ namespace KinectMenu
             },
             {
                 "Games",
-                new List<string>
+                new string[]
                 {
                     "Dance Central",
                     "Kinectimals",
@@ -48,7 +49,7 @@ namespace KinectMenu
             },
             {
                 "Movies",
-                new List<string>
+                new string[]
                 {
                     "Everything Must Go",
                     "Something Borrowed",
@@ -60,7 +61,7 @@ namespace KinectMenu
             },
             {
                 "Music",
-                new List<string>
+                new string[]
                 {
                     "Philipp Glass - The Hours",
                     "Novalima - Afro",
@@ -69,7 +70,7 @@ namespace KinectMenu
             },
             {
                 "Philipp Glass - The Hours",
-                new List<string>
+                new string[]
                 {
                     "The Poet Acts",
                     "Morning Passages",
@@ -82,7 +83,7 @@ namespace KinectMenu
             },
             {
                 "Novalima - Afro",
-                new List<string>
+                new string[]
                 {
                     "Chinchivi",
                     "Bandolero",
@@ -93,7 +94,7 @@ namespace KinectMenu
             },
             {
                 "Amon Tobin - Permutation",
-                new List<string>
+                new string[]
                 {
                     "Like Regular Chickens",
                     "Bridge",
@@ -105,7 +106,7 @@ namespace KinectMenu
             },
             {
                 "Apps",
-                new List<string>
+                new string[]
                 {
                     "Facebook",
                     "Google+",
@@ -115,9 +116,15 @@ namespace KinectMenu
             }
         };
 
+        private const string RootName = "Root";
+
         #endregion Constants
 
         #region Instance Variables
+
+        private readonly Dictionary<string, ListBox> Menus;
+        private ListBox CurrentMenu;
+        private readonly Stack<ListBox> Breadcrumb;
 
         #endregion Instance Variables
 
@@ -126,20 +133,18 @@ namespace KinectMenu
         public MainWindow()
         {
             InitializeComponent();
-            PushMenu(MenuHierarchy["Root"]);
+            Menus = new Dictionary<string, ListBox>();
+            foreach (var name in MenuHierarchy.Keys)
+                Menus[name] = MakeMenu(MenuHierarchy[name], HandleMenuClick);
+            Breadcrumb = new Stack<ListBox>();
+            PushMenu(RootName);
         }
 
         #endregion Initialization
 
         #region Mouse Event Handlers
 
-        private void HandleHover(object sender, MouseEventArgs e)
-        {
-            GetActiveMenu().SelectedItem = sender;
-            e.Handled = true;
-        }
-
-        private void HandleActiveClick(object sender, MouseEventArgs e)
+        private void HandleMenuClick(object sender, MouseEventArgs e)
         {
             PushMenu((ListBoxItem)sender);
             e.Handled = true;
@@ -157,16 +162,14 @@ namespace KinectMenu
 
         private void HandleHover(double y)
         {
-            var menu = GetActiveMenu();
             var item = SelectByY(y);
             if (item != null)
-                menu.SelectedItem = item;
+                CurrentMenu.SelectedItem = item;
         }
 
         private void HandleLeftSwipe(double y)
         {
-            var menu = GetActiveMenu();
-            var item = (ListBoxItem)menu.SelectedItem;
+            var item = (ListBoxItem)CurrentMenu.SelectedItem;
             if (item != null)
                 PushMenu(item);
         }
@@ -180,21 +183,43 @@ namespace KinectMenu
 
         #region Menu Manipulation Helpers
 
-        private ListBox GetActiveMenu()
+        private ListBox MakeMenu(IEnumerable<string> items, MouseButtonEventHandler clickHandler)
         {
-            return (ListBox)ActiveContainer.Children[0];
+            var menu = new ListBox();
+            foreach (string item in items)
+            {
+                var node = new ListBoxItem {Content = item};
+                node.MouseUp += clickHandler;
+                menu.Items.Add(node);
+            }
+            var transformGroup = new TransformGroup();
+            transformGroup.Children.Add(new TranslateTransform(0, 0));
+            transformGroup.Children.Add(new ScaleTransform(1, 1, 0.5, 0.5));
+            menu.RenderTransform = transformGroup;
+            MenuContainer.Children.Add(menu);
+            return menu;
         }
 
         private void PushMenu(string title)
         {
-            if (MenuHierarchy.ContainsKey(title))
-                PushMenu(MenuHierarchy[title]);
+            if (CurrentMenu != null && (CurrentMenu != Menus[RootName] || Menus.ContainsKey(title)))
+            {
+                CurrentMenu.SelectedIndex = -1;
+                Breadcrumb.Push(CurrentMenu);
+                BreadcrumbContainer.Items.Add(new ListBoxItem {Content = title});
+                Minimize(CurrentMenu);
+            }
+            if (Menus.ContainsKey(title))
+            {
+                CurrentMenu = Menus[title];
+            }
             else
             {
-                ActiveContainer.Children.Clear();
-                BreadcrumbContainer.Children.Clear();
-                PushMenu("Root");
+                CurrentMenu = Menus[RootName];
+                Breadcrumb.Clear();
+                BreadcrumbContainer.Items.Clear();
             }
+            New(CurrentMenu);
         }
 
         private void PushMenu(ListBoxItem selectedItem)
@@ -202,64 +227,167 @@ namespace KinectMenu
             PushMenu((string)selectedItem.Content);
         }
 
-        private void PushMenu(IEnumerable<string> items)
-        {
-            var menu = new ListBox
-            {
-                SelectionMode = SelectionMode.Single,
-                VerticalAlignment = VerticalAlignment.Center,
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0)
-            };
-            foreach (string item in items)
-            {
-                var node = new ListBoxItem
-                {
-                    Content = item,
-                    Background = Brushes.White,
-                    HorizontalContentAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, 10, 0, 10),
-                    Padding = new Thickness(10),
-                    FontSize = 32.0
-                };
-                node.MouseEnter += HandleHover;
-                node.MouseUp += HandleActiveClick;
-                menu.Items.Add(node);
-            }
-
-            if (ActiveContainer.Children.Count > 0)
-            {
-                var oldMenu = ActiveContainer.Children[0];
-                ActiveContainer.Children.Clear();
-                BreadcrumbContainer.Children.Add(oldMenu);
-            }
-            ActiveContainer.Children.Add(menu);
-        }
-
         private void PopMenu()
         {
-            if (BreadcrumbContainer.Children.Count > 0)
+            if (Breadcrumb.Count > 0)
             {
-                var popIndex = BreadcrumbContainer.Children.Count - 1;
-                var menu = BreadcrumbContainer.Children[popIndex];
-                BreadcrumbContainer.Children.RemoveAt(popIndex);
-                ActiveContainer.Children.Clear();
-                ActiveContainer.Children.Add(menu);
+                Discard(CurrentMenu);
+                BreadcrumbContainer.Items.RemoveAt(BreadcrumbContainer.Items.Count - 1);
+                CurrentMenu = Breadcrumb.Pop();
+                Restore(CurrentMenu);
             }
         }
 
         private ListBoxItem SelectByY(double y)
         {
-            var menu = GetActiveMenu();
             return (
-                from ListBoxItem item in menu.Items
-                let top = PointToScreen(new Point(0, 0)).Y
+                from ListBoxItem item in CurrentMenu.Items
+                let top = item.PointToScreen(new Point(0, 0)).Y
                 let bottom = top + item.ActualHeight
                 where y >= top && y <= bottom select item
             ).FirstOrDefault();
         }
 
-        #endregion
+        #endregion Menu Manipulation Helpers
+
+        #region Menu Animations
+
+        private void Minimize(ListBox menu)
+        {
+            menu.IsEnabled = false;
+            var breadcrumbItem = (ListBoxItem)BreadcrumbContainer.Items[BreadcrumbContainer.Items.Count - 1];
+            Point
+                origin = new Point(0, 0),
+                menuPoint = menu.TranslatePoint(origin, this),
+                breadcrumbPoint = breadcrumbItem.TranslatePoint(origin, this)
+            ;
+            var duration = new Duration(TimeSpan.FromMilliseconds(300));
+            DoubleAnimation
+                posXAnimation = new DoubleAnimation {Duration = duration, To = 2.8*(breadcrumbPoint.X - menuPoint.X)},
+                posYAnimation = new DoubleAnimation {Duration = duration, To = 2.8*(breadcrumbPoint.Y - menuPoint.Y)},
+                scaleXAnimation = new DoubleAnimation {Duration = duration, To = 0.3},
+                scaleYAnimation = new DoubleAnimation {Duration = duration, To = 0.3},
+                opacityAnimation = new DoubleAnimation {Duration = duration, To = 0}
+            ;
+            var translateTransform = ((TransformGroup)menu.RenderTransform).Children[0];
+            var scaleTransform = ((TransformGroup)menu.RenderTransform).Children[1];
+            translateTransform.BeginAnimation(TranslateTransform.XProperty, posXAnimation);
+            translateTransform.BeginAnimation(TranslateTransform.YProperty, posYAnimation);
+            scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnimation);
+            scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnimation);
+            opacityAnimation.Completed += (object sender, EventArgs e) =>
+            {
+                menu.Visibility = Visibility.Collapsed;
+                menu.IsEnabled = true;
+                translateTransform.BeginAnimation(TranslateTransform.XProperty, null);
+                translateTransform.BeginAnimation(TranslateTransform.YProperty, null);
+                scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+                scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+                menu.BeginAnimation(OpacityProperty, null);
+            };
+            menu.BeginAnimation(OpacityProperty, opacityAnimation);
+        }
+
+        private void Restore(ListBox menu)
+        {
+            menu.IsEnabled = false;
+            menu.Visibility = Visibility.Visible;
+            var breadcrumbItem = BreadcrumbContainer.Items.Count > 0
+                ? (ListBoxItem)BreadcrumbContainer.Items[BreadcrumbContainer.Items.Count - 1]
+                : null;
+            Point
+                origin = new Point(0, 0),
+                menuPoint = menu.TranslatePoint(origin, this),
+                breadcrumbPoint = breadcrumbItem == null ? origin : breadcrumbItem.TranslatePoint(origin, this)
+            ;
+            var duration = new Duration(TimeSpan.FromMilliseconds(300));
+            DoubleAnimation
+                posXAnimation = new DoubleAnimation {Duration = duration, From = breadcrumbPoint.X - menuPoint.X},
+                posYAnimation = new DoubleAnimation {Duration = duration, From = breadcrumbPoint.Y - menuPoint.Y},
+                scaleXAnimation = new DoubleAnimation {Duration = duration, From = 0.3},
+                scaleYAnimation = new DoubleAnimation {Duration = duration, From = 0.3},
+                opacityAnimation = new DoubleAnimation {Duration = duration, From = 0}
+            ;
+            var translateTransform = ((TransformGroup)menu.RenderTransform).Children[0];
+            var scaleTransform = ((TransformGroup)menu.RenderTransform).Children[1];
+            translateTransform.BeginAnimation(TranslateTransform.XProperty, posXAnimation);
+            translateTransform.BeginAnimation(TranslateTransform.YProperty, posYAnimation);
+            scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnimation);
+            scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnimation);
+            opacityAnimation.Completed += (object sender, EventArgs e) =>
+            {
+                menu.IsEnabled = true;
+                translateTransform.BeginAnimation(TranslateTransform.XProperty, null);
+                translateTransform.BeginAnimation(TranslateTransform.YProperty, null);
+                scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+                scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+                menu.BeginAnimation(OpacityProperty, null);
+            };
+            menu.BeginAnimation(OpacityProperty, opacityAnimation);
+        }
+
+        private void New(ListBox menu)
+        {
+            menu.IsEnabled = false;
+            menu.SelectedIndex = -1;
+            menu.Visibility = Visibility.Visible;
+            var duration = new Duration(TimeSpan.FromMilliseconds(400));
+            DoubleAnimation
+                posXAnimation = new DoubleAnimation {Duration = duration, From = -80},
+                posYAnimation = new DoubleAnimation {Duration = duration, From = -80},
+                scaleXAnimation = new DoubleAnimation {Duration = duration, From = 1.5},
+                scaleYAnimation = new DoubleAnimation {Duration = duration, From = 1.5},
+                opacityAnimation = new DoubleAnimation {Duration = duration, From = 0}
+            ;
+            var translateTransform = ((TransformGroup)menu.RenderTransform).Children[0];
+            var scaleTransform = ((TransformGroup)menu.RenderTransform).Children[1];
+            translateTransform.BeginAnimation(TranslateTransform.XProperty, posXAnimation);
+            translateTransform.BeginAnimation(TranslateTransform.YProperty, posYAnimation);
+            scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnimation);
+            scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnimation);
+            opacityAnimation.Completed += (object sender, EventArgs e) =>
+            {
+                menu.IsEnabled = true;
+                translateTransform.BeginAnimation(TranslateTransform.XProperty, null);
+                translateTransform.BeginAnimation(TranslateTransform.YProperty, null);
+                scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+                scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+                menu.BeginAnimation(OpacityProperty, null);
+            };
+            menu.BeginAnimation(OpacityProperty, opacityAnimation);
+        }
+
+        private void Discard(ListBox menu)
+        {
+            menu.IsEnabled = false;
+            var duration = new Duration(TimeSpan.FromMilliseconds(400));
+            DoubleAnimation
+                posXAnimation = new DoubleAnimation {Duration = duration, To = -80},
+                posYAnimation = new DoubleAnimation {Duration = duration, To = -80},
+                scaleXAnimation = new DoubleAnimation {Duration = duration, To = 1.5},
+                scaleYAnimation = new DoubleAnimation {Duration = duration, To = 1.5},
+                opacityAnimation = new DoubleAnimation {Duration = duration, To = 0}
+            ;
+            var translateTransform = ((TransformGroup)menu.RenderTransform).Children[0];
+            var scaleTransform = ((TransformGroup)menu.RenderTransform).Children[1];
+            translateTransform.BeginAnimation(TranslateTransform.XProperty, posXAnimation);
+            translateTransform.BeginAnimation(TranslateTransform.YProperty, posYAnimation);
+            scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnimation);
+            scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnimation);
+            opacityAnimation.Completed += (object sender, EventArgs e) =>
+            {
+                menu.Visibility = Visibility.Collapsed;
+                menu.IsEnabled = true;
+                translateTransform.BeginAnimation(TranslateTransform.XProperty, null);
+                translateTransform.BeginAnimation(TranslateTransform.YProperty, null);
+                scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+                scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+                menu.BeginAnimation(OpacityProperty, null);
+            };
+            menu.BeginAnimation(OpacityProperty, opacityAnimation);
+        }
+
+        #endregion Menu Animations
     }
 
 }

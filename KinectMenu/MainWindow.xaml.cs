@@ -226,7 +226,7 @@ namespace KinectMenu
                 var node = new ListBoxItem
                 {
                     Content = item,
-                    Background = Brushes.White,
+                    Background = Brushes.LightSteelBlue,
                     HorizontalContentAlignment = HorizontalAlignment.Center,
                     Margin = new Thickness(0, 10, 0, 10),
                     Padding = new Thickness(10),
@@ -260,7 +260,12 @@ namespace KinectMenu
 
         private ListBoxItem SelectByY(Point pt)
         {
-            // Console.WriteLine("Kinect X,Y: " + pt.X + "," + pt.Y);
+            // Adjust cursor's position
+            double ptX = pt.X + (hand.ActualWidth / 2);
+            double ptY = pt.Y + (hand.ActualHeight / 2);
+
+            handPosition.Content = "[Cursor Position] X: " + (int)ptX + " Y: " + (int)ptY;
+
             var menu = GetActiveMenu();            
             return (
                 from ListBoxItem item in menu.Items
@@ -269,7 +274,7 @@ namespace KinectMenu
                 let left = item.TranslatePoint(new Point(0, 0), Window).X
                 let bottom = top + item.ActualHeight
                 let right = left + item.ActualWidth
-                where ((left <= pt.X && pt.X <= right) && (top <= pt.Y && pt.Y <= bottom))
+                where ((left <= ptX && ptX <= right) && (top <= ptY && ptY <= bottom))
                 select item
             ).FirstOrDefault();
         }
@@ -279,9 +284,7 @@ namespace KinectMenu
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             try{
-
-                kgd = new KinectGestureDetect(HandleLeftSwipe, HandleRightSwipe, HandleHover, kinectCanvas, kinectDisplay, kinectDepth);
-                
+                kgd = new KinectGestureDetect(HandleLeftSwipe, HandleRightSwipe, HandleHover, kinectCanvas, kinectDisplay, kinectDepth, hand);
                 kgd.KinectLoad();
 
             }catch(Exception ex){
@@ -292,6 +295,14 @@ namespace KinectMenu
         private void Window_Closed(object sender, EventArgs e)
         {
             kgd.KinectClose();
+        }
+
+        private void Window_MouseMove(object sender, MouseEventArgs e)
+        {
+            Point pt = new Point();
+            pt.X = Mouse.GetPosition(this).X;
+            pt.Y = Mouse.GetPosition(this).Y;
+            mousePosition.Content = "[Mouse Position] X: " + pt.X + " Y: " + pt.Y;
         }
     }
 }

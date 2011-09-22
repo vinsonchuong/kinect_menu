@@ -26,6 +26,7 @@ namespace KinectMenu
         Canvas kinectCanvas;
         Image kinectDisplay;
         Image kinectDepth;
+        FrameworkElement hand;
   
         Action<Point> leftSwifeHandler;
         Action<Point> rightSwifeHandler;
@@ -34,7 +35,7 @@ namespace KinectMenu
         // Position of rightHand
         Point pt;
 
-        public KinectGestureDetect(Action<Point> leftSwifeHandler, Action<Point> rightSwifeHandler, Action<Point> hoverHandler, Canvas kinectCanvas, Image kinectDisplay, Image kinectDepth)
+        public KinectGestureDetect(Action<Point> leftSwifeHandler, Action<Point> rightSwifeHandler, Action<Point> hoverHandler, Canvas kinectCanvas, Image kinectDisplay, Image kinectDepth, FrameworkElement hand)
         {
             this.kinectRuntime = new Runtime();
             this.streamManager = new ColorStreamManager();
@@ -46,6 +47,7 @@ namespace KinectMenu
             //this.gesturesCanvas = gesturesCanvas;
             this.kinectDisplay = kinectDisplay;
             this.kinectDepth = kinectDepth;
+            this.hand = hand;
 
             //this.detectedGestures = detectedGestures;
             //this.rightHandPosition = rightHandPosition;
@@ -107,7 +109,7 @@ namespace KinectMenu
         {
             if (e.SkeletonFrame.Skeletons.Where(s => s.TrackingState != SkeletonTrackingState.NotTracked).Count() == 0)
                 return;
-
+            
             ProcessFrame(e.SkeletonFrame);
         }
 
@@ -134,19 +136,23 @@ namespace KinectMenu
                         swipeGestureRecognizer.Add(joint.Position, kinectRuntime.SkeletonEngine);
 
                         // Get position of joint and Save it to global variable
-                        setRightHandPosition(joint);
+                        setRightHandPosition(hand, joint);
                     }
                 }
                 algorithmicPostureRecognizer.TrackPostures(skeleton);
             }
-            skeletonDisplayManager.Draw(frame);
+            // skeletonDisplayManager.Draw(frame);
         }
 
-        public void setRightHandPosition(Joint joint)
+        public void setRightHandPosition(FrameworkElement ellipse, Joint joint)
         {
-            Joint aJoint = joint.ScaleTo(1280, 720);
+            var scaledJoint = joint.ScaleTo(1263, 681, .5f, .5f);
             
-            pt = new Point(aJoint.Position.X, aJoint.Position.Y);
+            // Draw Hand Cursor
+            Canvas.SetLeft(ellipse, scaledJoint.Position.X);
+            Canvas.SetTop(ellipse, scaledJoint.Position.Y);
+
+            pt = new Point(scaledJoint.Position.X, scaledJoint.Position.Y);
 
             hoverHandler(pt);
         }

@@ -6,7 +6,7 @@
     MouseUp="HandleBreadcrumbClick"
     Background="Black"
     Width="1280"
-    Height="720" Loaded="Window_Loaded" Closed="Window_Closed">
+    Height="720" Loaded="Window_Loaded" Closed="Window_Closed" MouseMove="Window_MouseMove">
     <Grid Name="Window">
         <Grid.RowDefinitions>
             <RowDefinition />
@@ -40,15 +40,35 @@
             Grid.Column="2">
             <Image
                 Name="kinectDisplay"
-                Width="320" Margin="50,33,50,407" />
+                Width="320"
+                Height="240" Margin="50,33,50,407" />
             <Image
                 Name="kinectDepth"
-                Width="320" Margin="50,307,50,133" />
+                Width="320"
+                Height="240"
+                Margin="50,307,50,133" />
+            <Label
+                Name="handPosition"
+                Width="320" 
+                Height="50"
+                Margin="50,554,50,78" 
+                Foreground="White" FontSize="18" FontWeight="Bold" />
+            <Label
+                Name="mousePosition"
+                Width="320" 
+                Height="50" 
+                Foreground="White" 
+                Margin="50,609,50,36" FontSize="18" FontWeight="Bold" />
         </Grid>
         <Canvas Name="kinectCanvas"
             Grid.Row="0"
             Grid.Column="0"
             Grid.ColumnSpan="3">
+            <Ellipse Height="40" Width="40" Name="hand">
+                <Ellipse.Fill>
+                    <ImageBrush ImageSource="/KinectMenu;component/Images/hand.png" />
+                </Ellipse.Fill>
+            </Ellipse>
         </Canvas>
     </Grid>
 </Window>

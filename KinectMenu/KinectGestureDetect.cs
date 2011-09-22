@@ -25,6 +25,7 @@ namespace KinectMenu
 
         Canvas kinectCanvas;
         Image kinectDisplay;
+        Image kinectDepth;
   
         Action<Point> leftSwifeHandler;
         Action<Point> rightSwifeHandler;
@@ -33,7 +34,7 @@ namespace KinectMenu
         // Position of rightHand
         Point pt;
 
-        public KinectGestureDetect(Action<Point> leftSwifeHandler, Action<Point> rightSwifeHandler, Action<Point> hoverHandler, Canvas kinectCanvas, Image kinectDisplay)
+        public KinectGestureDetect(Action<Point> leftSwifeHandler, Action<Point> rightSwifeHandler, Action<Point> hoverHandler, Canvas kinectCanvas, Image kinectDisplay, Image kinectDepth)
         {
             this.kinectRuntime = new Runtime();
             this.streamManager = new ColorStreamManager();
@@ -44,6 +45,8 @@ namespace KinectMenu
             this.kinectCanvas = kinectCanvas;
             //this.gesturesCanvas = gesturesCanvas;
             this.kinectDisplay = kinectDisplay;
+            this.kinectDepth = kinectDepth;
+
             //this.detectedGestures = detectedGestures;
             //this.rightHandPosition = rightHandPosition;
 
@@ -56,8 +59,12 @@ namespace KinectMenu
         {
             kinectRuntime.VideoFrameReady += new EventHandler<ImageFrameReadyEventArgs>(KinectRuntime_VideoFrameReady);
             kinectRuntime.SkeletonFrameReady += new EventHandler<SkeletonFrameReadyEventArgs>(kinectRuntime_SkeletonFrameReady);
-            kinectRuntime.Initialize(RuntimeOptions.UseSkeletalTracking | RuntimeOptions.UseColor);
+            kinectRuntime.DepthFrameReady += new EventHandler<ImageFrameReadyEventArgs>(kinectRuntime_DepthFrameReady);
+
+            kinectRuntime.Initialize(RuntimeOptions.UseDepth | RuntimeOptions.UseSkeletalTracking | RuntimeOptions.UseColor);
+
             kinectRuntime.VideoStream.Open(ImageStreamType.Video, 2, ImageResolution.Resolution640x480, ImageType.Color);
+            kinectRuntime.DepthStream.Open(ImageStreamType.Depth, 2, ImageResolution.Resolution320x240, ImageType.Depth);
 
             swipeGestureRecognizer.OnGestureDetected += OnGestureDetected;
 
@@ -147,6 +154,11 @@ namespace KinectMenu
         public void KinectRuntime_VideoFrameReady(object sender, ImageFrameReadyEventArgs e)
         {
             kinectDisplay.Source = streamManager.Update(e);
+        }
+
+        public void kinectRuntime_DepthFrameReady(object sender, ImageFrameReadyEventArgs e)
+        {
+            kinectDepth.Source = e.ImageFrame.ToBitmapSource();
         }
 
         public void KinectClose()

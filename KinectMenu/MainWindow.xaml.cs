@@ -280,7 +280,7 @@ namespace KinectMenu
         {
             try{
 
-                kgd = new KinectGestureDetect(HandleLeftSwipe, HandleRightSwipe, HandleHover, kinectCanvas, kinectDisplay);
+                kgd = new KinectGestureDetect(HandleLeftSwipe, HandleRightSwipe, HandleHover, kinectCanvas, kinectDisplay, kinectDepth);
                 
                 kgd.KinectLoad();
 

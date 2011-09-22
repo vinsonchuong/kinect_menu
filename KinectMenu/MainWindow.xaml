@@ -40,8 +40,10 @@
             Grid.Column="2">
             <Image
                 Name="kinectDisplay"
-                Width="320"
-                Height="240"/>
+                Width="320" Margin="50,33,50,407" />
+            <Image
+                Name="kinectDepth"
+                Width="320" Margin="50,307,50,133" />
         </Grid>
         <Canvas Name="kinectCanvas"
             Grid.Row="0"

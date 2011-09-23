@@ -1,126 +1,32 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using Kinect.Toolbox;
+using Microsoft.Research.Kinect.Nui;
+using Coding4Fun.Kinect.Wpf;
 
 namespace KinectMenu
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
-    /// 
     public partial class MainWindow : Window
     {
         #region Constants
 
-        KinectGestureDetect kgd;
-
         private static readonly Dictionary<String, IEnumerable<string>> MenuHierarchy =
             new Dictionary<string, IEnumerable<string>>
-
         {
-            {
-                "Root",
-                new string[]
-                {
-                    "Games",
-                    "Movies",
-                    "Music",
-                    "Apps",
-                    "Settings"
-                }
-            },
-            {
-                "Games",
-                new string[]
-                {
-                    "Dance Central",
-                    "Kinectimals",
-                    "Carnival Games",
-                    "Kinect Sports",
-                    "Kung Fu Panda",
-                    "Angry Birds"
-                }
-            },
-            {
-                "Movies",
-                new string[]
-                {
-                    "Everything Must Go",
-                    "Something Borrowed",
-                    "Rango",
-                    "Limitless",
-                    "Rio",
-                    "The Lincoln Lawyer"
-                }
-            },
-            {
-                "Music",
-                new string[]
-                {
-                    "Philipp Glass - The Hours",
-                    "Novalima - Afro",
-                    "Amon Tobin - Permutation"
-                }
-            },
-            {
-                "Philipp Glass - The Hours",
-                new string[]
-                {
-                    "The Poet Acts",
-                    "Morning Passages",
-                    "Something She Has to Do",
-                    "For Your Own Benefit",
-                    "Vanessa and the Changelings",
-                    "I'm Going to Make a Cake",
-                    "An Unwelcomed Friend"
-                }
-            },
-            {
-                "Novalima - Afro",
-                new string[]
-                {
-                    "Chinchivi",
-                    "Bandolero",
-                    "Malato",
-                    "Machete",
-                    "Candela"
-                }
-            },
-            {
-                "Amon Tobin - Permutation",
-                new string[]
-                {
-                    "Like Regular Chickens",
-                    "Bridge",
-                    "Reanimator",
-                    "Sordid",
-                    "Nightlife",
-                    "Escape"
-                }
-            },
-            {
-                "Apps",
-                new string[]
-                {
-                    "Facebook",
-                    "Google+",
-                    "Twitter",
-                    "Yelp"
-                }
-            }
+            {"Root", new string[] {"Games", "Movies", "Music", "Apps", "Settings"}},
+            {"Games", new string[] {"Dance Central", "Kinectimals", "Carnival Games", "Kinect Sports", "Kung Fu Panda", "Angry Birds"}},
+            {"Movies", new string[] {"Everything Must Go", "Something Borrowed", "Rango", "Limitless", "Rio", "The Lincoln Lawyer"}},
+            {"Music", new string[] {"Philipp Glass - The Hours", "Novalima - Afro", "Amon Tobin - Permutation"}},
+            {"Philipp Glass - The Hours", new string[] {"The Poet Acts", "Morning Passages", "Something She Has to Do", "For Your Own Benefit", "Vanessa and the Changelings", "I'm Going to Make a Cake", "An Unwelcomed Friend"}},
+            {"Novalima - Afro", new string[] {"Chinchivi", "Bandolero", "Malato", "Machete", "Candela"}},
+            {"Amon Tobin - Permutation", new string[] {"Like Regular Chickens", "Bridge", "Reanimator", "Sordid", "Nightlife", "Escape"}},
+            {"Apps", new string[] {"Facebook", "Google+", "Twitter", "Yelp"}}
         };
 
         private const string RootName = "Root";
@@ -128,6 +34,9 @@ namespace KinectMenu
         #endregion Constants
 
         #region Instance Variables
+
+        private readonly Runtime KinectRuntime;
+        private readonly ColorStreamManager ColorStreamManager;
 
         private readonly Dictionary<string, ListBox> Menus;
         private ListBox CurrentMenu;
@@ -140,11 +49,49 @@ namespace KinectMenu
         public MainWindow()
         {
             InitializeComponent();
+
+            KinectRuntime = new Runtime();
+            ColorStreamManager = new ColorStreamManager();
+
             Menus = new Dictionary<string, ListBox>();
+            Breadcrumb = new Stack<ListBox>();
+            InitializeMenu();
+        }
+
+        private void InitializeKinect()
+        {
+            KinectRuntime.VideoFrameReady += (object sender, ImageFrameReadyEventArgs e) =>
+            {
+                KinectVideo.Source = ColorStreamManager.Update(e);
+            };
+            KinectRuntime.DepthFrameReady += (object sender, ImageFrameReadyEventArgs e) =>
+            {
+                KinectDepth.Source = e.ImageFrame.ToBitmapSource();
+            };
+            KinectRuntime.VideoStream.Open(ImageStreamType.Video, 2, ImageResolution.Resolution320x240, ImageType.Color);
+            KinectRuntime.DepthStream.Open(ImageStreamType.Depth, 2, ImageResolution.Resolution320x240, ImageType.Depth);
+            KinectRuntime.Initialize(RuntimeOptions.UseDepth | RuntimeOptions.UseSkeletalTracking | RuntimeOptions.UseColor);
+            //GestureDetector = new KinectGestureDetect(HandleLeftSwipe, HandleRightSwipe, HandleHover, kinectCanvas, kinectDisplay, kinectDepth);
+            //try
+            //{
+            //    GestureDetector.KinectLoad();
+            //}
+            //catch (Exception)
+            //{
+                // Kinect not connected
+            //}
+        }
+
+        private void InitializeMenu()
+        {
             foreach (var name in MenuHierarchy.Keys)
                 Menus[name] = MakeMenu(MenuHierarchy[name], HandleMenuClick);
-            Breadcrumb = new Stack<ListBox>();
             PushMenu(RootName);
+        }
+
+        private void Close(object sender, EventArgs e)
+        {
+            KinectRuntime.Uninitialize();
         }
 
         #endregion Initialization
@@ -173,6 +120,8 @@ namespace KinectMenu
             var item = SelectByY(pt);
             if (item != null)
                 CurrentMenu.SelectedItem = item;
+            else
+                CurrentMenu.SelectedIndex = -1;
         }
 
         private void HandleLeftSwipe(Point pt)
@@ -248,11 +197,8 @@ namespace KinectMenu
 
         private ListBoxItem SelectByY(Point pt)
         {
-            handPosition.Content = "[Cursor Position] X: " + (int)pt.X + " Y: " + (int)pt.Y;
-
             return (
                 from ListBoxItem item in CurrentMenu.Items
-                // Change it to get distance from window, not screen
                 let top = item.TranslatePoint(new Point(0, 0), Window).Y
                 let left = item.TranslatePoint(new Point(0, 0), Window).X
                 let bottom = top + item.ActualHeight
@@ -402,32 +348,5 @@ namespace KinectMenu
         }
 
         #endregion Menu Animations
-
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                kgd = new KinectGestureDetect(HandleLeftSwipe, HandleRightSwipe, HandleHover, kinectCanvas, kinectDisplay, kinectDepth);
-                kgd.KinectLoad();
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-        }
-
-        private void Window_Closed(object sender, EventArgs e)
-        {
-            kgd.KinectClose();
-        }
-
-        private void Window_MouseMove(object sender, MouseEventArgs e)
-        {
-            Point pt = new Point();
-            pt.X = Mouse.GetPosition(this).X;
-            pt.Y = Mouse.GetPosition(this).Y;
-            mousePosition.Content = "[Mouse Position] X: " + pt.X + " Y: " + pt.Y;
-        }
     }
 }

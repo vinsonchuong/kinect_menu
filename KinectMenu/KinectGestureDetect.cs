@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
 using Kinect.Toolbox;
 using Microsoft.Research.Kinect.Nui;
 using Coding4Fun.Kinect.Wpf;
@@ -10,70 +9,52 @@ namespace KinectMenu
 {
     class KinectGestureDetect
     {
-        Runtime kinectRuntime;
+        #region Instance Variables
 
-        readonly ColorStreamManager streamManager;
-        readonly SwipeGestureDetector swipeGestureRecognizer;
-        readonly BarycenterHelper barycenterHelper;
-        readonly AlgorithmicPostureDetector algorithmicPostureRecognizer;
+        private Runtime KinectRuntime;
 
-        SkeletonDisplayManager skeletonDisplayManager;
+        private readonly SwipeGestureDetector SwipeGestureRecognizer;
+        private readonly BarycenterHelper BarycenterHelper;
+        private readonly AlgorithmicPostureDetector AlgorithmicPostureRecognizer;
 
-        Canvas kinectCanvas;
-        Image kinectDisplay;
-        Image kinectDepth;
-  
-        Action<Point> leftSwifeHandler;
-        Action<Point> rightSwifeHandler;
-        Action<Point> hoverHandler;
+        private Action<Point> LeftSwipeHandler;
+        private Action<Point> RightSwipeHandler;
+        private Action<Point> HoverHandler;
 
         // Position of rightHand
-        Point pt;
+        private Point pt;
 
-        public KinectGestureDetect(Action<Point> leftSwifeHandler, Action<Point> rightSwifeHandler,
-            Action<Point> hoverHandler, Canvas kinectCanvas, Image kinectDisplay, Image kinectDepth)
+        #endregion Instance Variables
+
+        #region Initialization
+
+        public KinectGestureDetect(Action<Point> leftSwipeHandler, Action<Point> rightSwipeHandler,
+            Action<Point> hoverHandler)
         {
-            this.kinectRuntime = new Runtime();
-            this.streamManager = new ColorStreamManager();
-            this.swipeGestureRecognizer = new SwipeGestureDetector();
-            this.barycenterHelper = new BarycenterHelper();
-            this.algorithmicPostureRecognizer = new AlgorithmicPostureDetector();
+            KinectRuntime = new Runtime();
+            SwipeGestureRecognizer = new SwipeGestureDetector();
+            BarycenterHelper = new BarycenterHelper();
+            AlgorithmicPostureRecognizer = new AlgorithmicPostureDetector();
 
-            this.kinectCanvas = kinectCanvas;
-            //this.gesturesCanvas = gesturesCanvas;
-            this.kinectDisplay = kinectDisplay;
-            this.kinectDepth = kinectDepth;
-
-            //this.detectedGestures = detectedGestures;
-            //this.rightHandPosition = rightHandPosition;
-
-            this.leftSwifeHandler = leftSwifeHandler;
-            this.rightSwifeHandler = rightSwifeHandler;
-            this.hoverHandler = hoverHandler;
+            LeftSwipeHandler = leftSwipeHandler;
+            RightSwipeHandler = rightSwipeHandler;
+            HoverHandler = hoverHandler;
         }
 
         public void KinectLoad()
         {
-            kinectRuntime.VideoFrameReady += new EventHandler<ImageFrameReadyEventArgs>(KinectRuntime_VideoFrameReady);
-            kinectRuntime.SkeletonFrameReady += new EventHandler<SkeletonFrameReadyEventArgs>(kinectRuntime_SkeletonFrameReady);
-            kinectRuntime.DepthFrameReady += new EventHandler<ImageFrameReadyEventArgs>(kinectRuntime_DepthFrameReady);
+            KinectRuntime.SkeletonFrameReady += new EventHandler<SkeletonFrameReadyEventArgs>(ProcessSkeleton);
 
-            kinectRuntime.Initialize(RuntimeOptions.UseDepth | RuntimeOptions.UseSkeletalTracking | RuntimeOptions.UseColor);
-
-            kinectRuntime.VideoStream.Open(ImageStreamType.Video, 2, ImageResolution.Resolution640x480, ImageType.Color);
-            kinectRuntime.DepthStream.Open(ImageStreamType.Depth, 2, ImageResolution.Resolution320x240, ImageType.Depth);
-
-            swipeGestureRecognizer.OnGestureDetected += OnGestureDetected;
-
-            skeletonDisplayManager = new SkeletonDisplayManager(kinectRuntime.SkeletonEngine, kinectCanvas);
+            SwipeGestureRecognizer.OnGestureDetected += OnGestureDetected;
 
             MakeSmoothMove();
         }
 
-        public void MakeSmoothMove()
+        #endregion Initialization
+
+        private void MakeSmoothMove()
         {
-            // Make movement smooth
-            kinectRuntime.SkeletonEngine.TransformSmooth = true;
+            KinectRuntime.SkeletonEngine.TransformSmooth = true;
 
             var parameters = new TransformSmoothParameters
             {
@@ -84,80 +65,43 @@ namespace KinectMenu
                 MaxDeviationRadius = 0.04f
             };
 
-            kinectRuntime.SkeletonEngine.SmoothParameters = parameters;
+            KinectRuntime.SkeletonEngine.SmoothParameters = parameters;
         }
 
-        public void OnGestureDetected(string gesture)
+        private void OnGestureDetected(string gesture)
         {
-            //int pos = detectedGestures.Items.Add(string.Format("{0} : {1}", gesture, DateTime.Now));
-            //detectedGestures.SelectedIndex = pos;
-            if (gesture.Equals("SwipeToRight")){
-                rightSwifeHandler(pt);
-                Console.WriteLine("SwipeToRight");
-            }else if (gesture.Equals("SwipeToLeft")){
-                leftSwifeHandler(pt);
-                Console.WriteLine("SwipeToLeft");
-            }
+            if (gesture.Equals("SwipeToLeft"))
+                LeftSwipeHandler(pt);
+            else
+                RightSwipeHandler(pt);
         }
 
-        public void kinectRuntime_SkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
+        private void ProcessSkeleton(object sender, SkeletonFrameReadyEventArgs e)
         {
-            if (e.SkeletonFrame.Skeletons.Where(s => s.TrackingState != SkeletonTrackingState.NotTracked).Count() == 0)
-                return;
-            
-            ProcessFrame(e.SkeletonFrame);
-        }
-
-        public void ProcessFrame(SkeletonFrame frame)
-        {
-            foreach (var skeleton in frame.Skeletons)
+            if (e.SkeletonFrame.Skeletons.Where(s => s.TrackingState != SkeletonTrackingState.NotTracked).Count() > 0)
             {
-                if (skeleton.TrackingState != SkeletonTrackingState.Tracked)
-                    continue;
-
-                barycenterHelper.Add(skeleton.Position.ToVector3(), skeleton.TrackingID);
-
-                // stabilities.Add(skeleton.TrackingID, barycenterHelper.IsStable(skeleton.TrackingID) ? "Stable" : "Unstable");
-                if (!barycenterHelper.IsStable(skeleton.TrackingID))
-                    continue;
-
-                foreach (Joint joint in skeleton.Joints)
+                foreach (var skeleton in e.SkeletonFrame.Skeletons)
                 {
-                    if (joint.Position.W < 0.8f || joint.TrackingState != JointTrackingState.Tracked)
-                        continue;
-
-                    if (joint.ID == JointID.HandRight)
+                    if (skeleton.TrackingState == SkeletonTrackingState.Tracked)
                     {
-                        swipeGestureRecognizer.Add(joint.Position, kinectRuntime.SkeletonEngine);
-
-                        // Get position of joint and Save it to global variable
-                        setRightHandPosition(joint);
+                        BarycenterHelper.Add(skeleton.Position.ToVector3(), skeleton.TrackingID);
+                        if (BarycenterHelper.IsStable(skeleton.TrackingID))
+                        {
+                            foreach (Joint joint in skeleton.Joints)
+                            {
+                                if (joint.Position.W >= 0.8f && joint.TrackingState == JointTrackingState.Tracked &&
+                                    joint.ID == JointID.HandRight)
+                                {
+                                    SwipeGestureRecognizer.Add(joint.Position, KinectRuntime.SkeletonEngine);
+                                    var scaledJoint = joint.ScaleTo(1263, 681, .5f, .5f);
+                                    HoverHandler(new Point(scaledJoint.Position.X, scaledJoint.Position.Y));
+                                }
+                            }
+                            AlgorithmicPostureRecognizer.TrackPostures(skeleton);
+                        }
                     }
                 }
-                algorithmicPostureRecognizer.TrackPostures(skeleton);
             }
-            // skeletonDisplayManager.Draw(frame);
-        }
-
-        public void setRightHandPosition(Joint joint)
-        {
-            var scaledJoint = joint.ScaleTo(1263, 681, .5f, .5f);
-            hoverHandler(new Point(scaledJoint.Position.X, scaledJoint.Position.Y));
-        }
-
-        public void KinectRuntime_VideoFrameReady(object sender, ImageFrameReadyEventArgs e)
-        {
-            kinectDisplay.Source = streamManager.Update(e);
-        }
-
-        public void kinectRuntime_DepthFrameReady(object sender, ImageFrameReadyEventArgs e)
-        {
-            kinectDepth.Source = e.ImageFrame.ToBitmapSource();
-        }
-
-        public void KinectClose()
-        {
-            kinectRuntime.Uninitialize();
         }
     }
 }

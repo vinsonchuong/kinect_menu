@@ -17,12 +17,19 @@ using System.Windows.Shapes;
 
 namespace KinectMenu
 {
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    /// 
     public partial class MainWindow : Window
     {
         #region Constants
 
+        KinectGestureDetect kgd;
+
         private static readonly Dictionary<String, IEnumerable<string>> MenuHierarchy =
             new Dictionary<string, IEnumerable<string>>
+
         {
             {
                 "Root",
@@ -160,21 +167,22 @@ namespace KinectMenu
 
         #region Kinect Event Handlers
 
-        private void HandleHover(double y)
+        private void HandleHover(Point pt)
         {
-            var item = SelectByY(y);
+            CursorImage.Margin = new Thickness(pt.X, pt.Y, 0, 0);
+            var item = SelectByY(pt);
             if (item != null)
                 CurrentMenu.SelectedItem = item;
         }
 
-        private void HandleLeftSwipe(double y)
+        private void HandleLeftSwipe(Point pt)
         {
             var item = (ListBoxItem)CurrentMenu.SelectedItem;
             if (item != null)
                 PushMenu(item);
         }
 
-        private void HandleRightSwipe(double y)
+        private void HandleRightSwipe(Point pt)
         {
             PopMenu();
         }
@@ -188,7 +196,7 @@ namespace KinectMenu
             var menu = new ListBox();
             foreach (string item in items)
             {
-                var node = new ListBoxItem {Content = item};
+                var node = new ListBoxItem { Content = item };
                 node.MouseUp += clickHandler;
                 menu.Items.Add(node);
             }
@@ -206,7 +214,7 @@ namespace KinectMenu
             {
                 CurrentMenu.SelectedIndex = -1;
                 Breadcrumb.Push(CurrentMenu);
-                BreadcrumbContainer.Items.Add(new ListBoxItem {Content = title});
+                BreadcrumbContainer.Items.Add(new ListBoxItem { Content = title });
                 Minimize(CurrentMenu);
             }
             if (Menus.ContainsKey(title))
@@ -238,13 +246,19 @@ namespace KinectMenu
             }
         }
 
-        private ListBoxItem SelectByY(double y)
+        private ListBoxItem SelectByY(Point pt)
         {
+            handPosition.Content = "[Cursor Position] X: " + (int)pt.X + " Y: " + (int)pt.Y;
+
             return (
                 from ListBoxItem item in CurrentMenu.Items
-                let top = item.PointToScreen(new Point(0, 0)).Y
+                // Change it to get distance from window, not screen
+                let top = item.TranslatePoint(new Point(0, 0), Window).Y
+                let left = item.TranslatePoint(new Point(0, 0), Window).X
                 let bottom = top + item.ActualHeight
-                where y >= top && y <= bottom select item
+                let right = left + item.ActualWidth
+                where ((left <= pt.X && pt.X <= right) && (top <= pt.Y && pt.Y <= bottom))
+                select item
             ).FirstOrDefault();
         }
 
@@ -263,11 +277,11 @@ namespace KinectMenu
             ;
             var duration = new Duration(TimeSpan.FromMilliseconds(300));
             DoubleAnimation
-                posXAnimation = new DoubleAnimation {Duration = duration, To = 2.8*(breadcrumbPoint.X - menuPoint.X)},
-                posYAnimation = new DoubleAnimation {Duration = duration, To = 2.8*(breadcrumbPoint.Y - menuPoint.Y)},
-                scaleXAnimation = new DoubleAnimation {Duration = duration, To = 0.3},
-                scaleYAnimation = new DoubleAnimation {Duration = duration, To = 0.3},
-                opacityAnimation = new DoubleAnimation {Duration = duration, To = 0}
+                posXAnimation = new DoubleAnimation { Duration = duration, To = 2.8 * (breadcrumbPoint.X - menuPoint.X) },
+                posYAnimation = new DoubleAnimation { Duration = duration, To = 2.8 * (breadcrumbPoint.Y - menuPoint.Y) },
+                scaleXAnimation = new DoubleAnimation { Duration = duration, To = 0.3 },
+                scaleYAnimation = new DoubleAnimation { Duration = duration, To = 0.3 },
+                opacityAnimation = new DoubleAnimation { Duration = duration, To = 0 }
             ;
             var translateTransform = ((TransformGroup)menu.RenderTransform).Children[0];
             var scaleTransform = ((TransformGroup)menu.RenderTransform).Children[1];
@@ -302,11 +316,11 @@ namespace KinectMenu
             ;
             var duration = new Duration(TimeSpan.FromMilliseconds(300));
             DoubleAnimation
-                posXAnimation = new DoubleAnimation {Duration = duration, From = breadcrumbPoint.X - menuPoint.X},
-                posYAnimation = new DoubleAnimation {Duration = duration, From = breadcrumbPoint.Y - menuPoint.Y},
-                scaleXAnimation = new DoubleAnimation {Duration = duration, From = 0.3},
-                scaleYAnimation = new DoubleAnimation {Duration = duration, From = 0.3},
-                opacityAnimation = new DoubleAnimation {Duration = duration, From = 0}
+                posXAnimation = new DoubleAnimation { Duration = duration, From = breadcrumbPoint.X - menuPoint.X },
+                posYAnimation = new DoubleAnimation { Duration = duration, From = breadcrumbPoint.Y - menuPoint.Y },
+                scaleXAnimation = new DoubleAnimation { Duration = duration, From = 0.3 },
+                scaleYAnimation = new DoubleAnimation { Duration = duration, From = 0.3 },
+                opacityAnimation = new DoubleAnimation { Duration = duration, From = 0 }
             ;
             var translateTransform = ((TransformGroup)menu.RenderTransform).Children[0];
             var scaleTransform = ((TransformGroup)menu.RenderTransform).Children[1];
@@ -333,11 +347,11 @@ namespace KinectMenu
             menu.Visibility = Visibility.Visible;
             var duration = new Duration(TimeSpan.FromMilliseconds(400));
             DoubleAnimation
-                posXAnimation = new DoubleAnimation {Duration = duration, From = -80},
-                posYAnimation = new DoubleAnimation {Duration = duration, From = -80},
-                scaleXAnimation = new DoubleAnimation {Duration = duration, From = 1.5},
-                scaleYAnimation = new DoubleAnimation {Duration = duration, From = 1.5},
-                opacityAnimation = new DoubleAnimation {Duration = duration, From = 0}
+                posXAnimation = new DoubleAnimation { Duration = duration, From = -80 },
+                posYAnimation = new DoubleAnimation { Duration = duration, From = -80 },
+                scaleXAnimation = new DoubleAnimation { Duration = duration, From = 1.5 },
+                scaleYAnimation = new DoubleAnimation { Duration = duration, From = 1.5 },
+                opacityAnimation = new DoubleAnimation { Duration = duration, From = 0 }
             ;
             var translateTransform = ((TransformGroup)menu.RenderTransform).Children[0];
             var scaleTransform = ((TransformGroup)menu.RenderTransform).Children[1];
@@ -362,11 +376,11 @@ namespace KinectMenu
             menu.IsEnabled = false;
             var duration = new Duration(TimeSpan.FromMilliseconds(400));
             DoubleAnimation
-                posXAnimation = new DoubleAnimation {Duration = duration, To = -80},
-                posYAnimation = new DoubleAnimation {Duration = duration, To = -80},
-                scaleXAnimation = new DoubleAnimation {Duration = duration, To = 1.5},
-                scaleYAnimation = new DoubleAnimation {Duration = duration, To = 1.5},
-                opacityAnimation = new DoubleAnimation {Duration = duration, To = 0}
+                posXAnimation = new DoubleAnimation { Duration = duration, To = -80 },
+                posYAnimation = new DoubleAnimation { Duration = duration, To = -80 },
+                scaleXAnimation = new DoubleAnimation { Duration = duration, To = 1.5 },
+                scaleYAnimation = new DoubleAnimation { Duration = duration, To = 1.5 },
+                opacityAnimation = new DoubleAnimation { Duration = duration, To = 0 }
             ;
             var translateTransform = ((TransformGroup)menu.RenderTransform).Children[0];
             var scaleTransform = ((TransformGroup)menu.RenderTransform).Children[1];
@@ -388,6 +402,32 @@ namespace KinectMenu
         }
 
         #endregion Menu Animations
-    }
 
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                kgd = new KinectGestureDetect(HandleLeftSwipe, HandleRightSwipe, HandleHover, kinectCanvas, kinectDisplay, kinectDepth);
+                kgd.KinectLoad();
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            kgd.KinectClose();
+        }
+
+        private void Window_MouseMove(object sender, MouseEventArgs e)
+        {
+            Point pt = new Point();
+            pt.X = Mouse.GetPosition(this).X;
+            pt.Y = Mouse.GetPosition(this).Y;
+            mousePosition.Content = "[Mouse Position] X: " + pt.X + " Y: " + pt.Y;
+        }
+    }
 }

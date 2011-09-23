@@ -1,4 +1,4 @@
-﻿<Window
+<Window
     x:Class="KinectMenu.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -7,8 +7,11 @@
     Background="Black"
     Width="1280"
     Height="720"
+    Loaded="Window_Loaded"
+    Closed="Window_Closed"
+    MouseMove="Window_MouseMove"
 >
-    <Grid>
+    <Grid Name="Window">
         <Grid.RowDefinitions>
             <RowDefinition />
         </Grid.RowDefinitions>
@@ -43,7 +46,6 @@
         </ListBox>
         <Grid
             Name="MenuContainer"
-            Grid.Row="0"
             Grid.Column="1"
             x:FieldModifier="private"
         >
@@ -146,5 +148,46 @@
                 </Style>
             </Grid.Resources>
         </Grid>
+        <Grid
+            Name="KinectInfoContainer"
+            Grid.Column="2">
+            <Image
+                Name="kinectDisplay"
+                Width="320"
+                Height="240" Margin="50,33,50,407" />
+            <Image
+                Name="kinectDepth"
+                Width="320"
+                Height="240"
+                Margin="50,307,50,133" />
+            <Label
+                Name="handPosition"
+                Width="320" 
+                Height="50"
+                Margin="50,554,50,78" 
+                Foreground="White" FontSize="18" FontWeight="Bold" />
+            <Label
+                Name="mousePosition"
+                Width="320" 
+                Height="50" 
+                Foreground="White" 
+                Margin="50,609,50,36" FontSize="18" FontWeight="Bold" />
+        </Grid>
+        <Canvas Name="kinectCanvas"
+            Grid.ColumnSpan="3">
+        </Canvas>
+        <Image
+            Name="CursorImage"
+            Grid.ColumnSpan="3"
+            Height="40"
+            HorizontalAlignment="Left"
+            Source="Images/Hand.png"
+            VerticalAlignment="Top"
+            Width="40"
+        >
+            <Image.RenderTransform>
+                <TranslateTransform X="-20" Y="-20" />
+            </Image.RenderTransform>
+        </Image>
     </Grid>
 </Window>

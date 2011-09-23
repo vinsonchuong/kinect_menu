@@ -52,6 +52,7 @@ namespace KinectMenu
 
             KinectRuntime = new Runtime();
             ColorStreamManager = new ColorStreamManager();
+            InitializeKinect();
 
             Menus = new Dictionary<string, ListBox>();
             Breadcrumb = new Stack<ListBox>();
@@ -68,18 +69,20 @@ namespace KinectMenu
             {
                 KinectDepth.Source = e.ImageFrame.ToBitmapSource();
             };
-            KinectRuntime.VideoStream.Open(ImageStreamType.Video, 2, ImageResolution.Resolution320x240, ImageType.Color);
-            KinectRuntime.DepthStream.Open(ImageStreamType.Depth, 2, ImageResolution.Resolution320x240, ImageType.Depth);
+            KinectGestureDetector.Initialize(KinectRuntime, HandleLeftSwipe, HandleRightSwipe, HandleHover);
             KinectRuntime.Initialize(RuntimeOptions.UseDepth | RuntimeOptions.UseSkeletalTracking | RuntimeOptions.UseColor);
-            //GestureDetector = new KinectGestureDetect(HandleLeftSwipe, HandleRightSwipe, HandleHover, kinectCanvas, kinectDisplay, kinectDepth);
-            //try
-            //{
-            //    GestureDetector.KinectLoad();
-            //}
-            //catch (Exception)
-            //{
-                // Kinect not connected
-            //}
+//            KinectRuntime.VideoStream.Open(ImageStreamType.Video, 2, ImageResolution.Resolution640x480, ImageType.Color);
+//            KinectRuntime.DepthStream.Open(ImageStreamType.Depth, 2, ImageResolution.Resolution320x240, ImageType.Depth);
+
+            KinectRuntime.SkeletonEngine.TransformSmooth = true;
+            KinectRuntime.SkeletonEngine.SmoothParameters = new TransformSmoothParameters
+            {
+                Smoothing = 0.75f,
+                Correction = 0.1f,
+                Prediction = 0.1f,
+                JitterRadius = 0.05f,
+                MaxDeviationRadius = 0.04f
+            };
         }
 
         private void InitializeMenu()

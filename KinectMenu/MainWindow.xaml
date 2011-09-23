@@ -144,15 +144,19 @@
         <Grid Grid.Column="2">
             <Image
                 Name="KinectVideo"
-                Width="320"
                 Height="240"
-                Margin="50,33,50,407"
+                HorizontalAlignment="Center"
+                Margin="0 70"
+                VerticalAlignment="Top"
+                Width="320"
             />
             <Image
                 Name="KinectDepth"
-                Width="320"
                 Height="240"
-                Margin="50,307,50,133"
+                HorizontalAlignment="Center"
+                Margin="0 70"
+                VerticalAlignment="Bottom"
+                Width="320"
             />
         </Grid>
         <Image

@@ -17,7 +17,7 @@ namespace KinectMenu
         readonly BarycenterHelper barycenterHelper;
         readonly AlgorithmicPostureDetector algorithmicPostureRecognizer;
 
-        SkeletonDisplayManager skeletonDisplayManager;
+        // SkeletonDisplayManager skeletonDisplayManager;
 
         Canvas kinectCanvas;
         Image kinectDisplay;
@@ -28,7 +28,7 @@ namespace KinectMenu
         Action<Point> hoverHandler;
 
         // Position of rightHand
-        Point pt;
+        Point pt = new Point(0,0);
 
         public KinectGestureDetect(Action<Point> leftSwifeHandler, Action<Point> rightSwifeHandler,
             Action<Point> hoverHandler, Canvas kinectCanvas, Image kinectDisplay, Image kinectDepth)
@@ -65,7 +65,7 @@ namespace KinectMenu
 
             swipeGestureRecognizer.OnGestureDetected += OnGestureDetected;
 
-            skeletonDisplayManager = new SkeletonDisplayManager(kinectRuntime.SkeletonEngine, kinectCanvas);
+            // skeletonDisplayManager = new SkeletonDisplayManager(kinectRuntime.SkeletonEngine, kinectCanvas);
 
             MakeSmoothMove();
         }
@@ -89,14 +89,14 @@ namespace KinectMenu
 
         public void OnGestureDetected(string gesture)
         {
-            //int pos = detectedGestures.Items.Add(string.Format("{0} : {1}", gesture, DateTime.Now));
-            //detectedGestures.SelectedIndex = pos;
+            // int pos = detectedGestures.Items.Add(string.Format("{0} : {1}", gesture, DateTime.Now));
+            // detectedGestures.SelectedIndex = pos;
             if (gesture.Equals("SwipeToRight")){
                 rightSwifeHandler(pt);
-                Console.WriteLine("SwipeToRight");
+                // Console.WriteLine("SwipeToRight");
             }else if (gesture.Equals("SwipeToLeft")){
                 leftSwifeHandler(pt);
-                Console.WriteLine("SwipeToLeft");
+                // Console.WriteLine("SwipeToLeft");
             }
         }
 
@@ -141,8 +141,35 @@ namespace KinectMenu
 
         public void setRightHandPosition(Joint joint)
         {
-            var scaledJoint = joint.ScaleTo(1263, 681, .5f, .5f);
-            hoverHandler(new Point(scaledJoint.Position.X, scaledJoint.Position.Y));
+            int windowX = 1263 / 2;
+            int windowY = 681 / 2;
+
+            float scaledX;
+            float scaledY;
+
+            if (joint.Position.X >= 0) // from 0 to 1; Right Half
+            {
+                scaledX = (windowX) + (windowX * joint.Position.X);
+            }
+            else // from -1 to 0; Left Half
+            {
+                scaledX = (windowX) * (1 - Math.Abs(joint.Position.X));
+            }
+
+            // Adjust the range of cursor's position within windows
+            if (joint.Position.Y >= 0) // from 1 to 0
+            {
+                scaledY = (windowY + 200) * (1 - joint.Position.Y);
+            }
+            else // from 0 to -1
+            {
+                scaledY = (windowY + 200) + ((windowY) * Math.Abs(joint.Position.Y));
+            }
+
+            hoverHandler(new Point(scaledX, scaledY));
+
+            // var scaledJoint = joint.ScaleTo(1263, 681, .5f, .5f);
+            // hoverHandler(new Point(scaledX, scaledY));
         }
 
         public void KinectRuntime_VideoFrameReady(object sender, ImageFrameReadyEventArgs e)

@@ -165,13 +165,13 @@
                 Width="320" 
                 Height="50"
                 Margin="50,554,50,78" 
-                Foreground="White" FontSize="18" FontWeight="Bold" />
+                Foreground="White" FontSize="20" FontWeight="Bold" />
             <Label
                 Name="mousePosition"
                 Width="320" 
                 Height="50" 
                 Foreground="White" 
-                Margin="50,609,50,36" FontSize="18" FontWeight="Bold" />
+                Margin="50,609,50,36" FontSize="20" FontWeight="Bold" />
         </Grid>
         <Canvas Name="kinectCanvas"
             Grid.ColumnSpan="3">

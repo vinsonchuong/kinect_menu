@@ -61,28 +61,32 @@ namespace KinectMenu
 
         private void InitializeKinect()
         {
-            KinectRuntime.VideoFrameReady += (object sender, ImageFrameReadyEventArgs e) =>
+            try
             {
-                KinectVideo.Source = ColorStreamManager.Update(e);
-            };
-            KinectRuntime.DepthFrameReady += (object sender, ImageFrameReadyEventArgs e) =>
-            {
-                KinectDepth.Source = e.ImageFrame.ToBitmapSource();
-            };
-            KinectGestureDetector.Initialize(KinectRuntime, HandleLeftSwipe, HandleRightSwipe, HandleHover);
-            KinectRuntime.Initialize(RuntimeOptions.UseDepth | RuntimeOptions.UseSkeletalTracking | RuntimeOptions.UseColor);
-            KinectRuntime.VideoStream.Open(ImageStreamType.Video, 2, ImageResolution.Resolution640x480, ImageType.Color);
-            KinectRuntime.DepthStream.Open(ImageStreamType.Depth, 2, ImageResolution.Resolution320x240, ImageType.Depth);
+                KinectRuntime.VideoFrameReady += (object sender, ImageFrameReadyEventArgs e) =>
+                {
+                    KinectVideo.Source = ColorStreamManager.Update(e);
+                };
+                KinectRuntime.DepthFrameReady += (object sender, ImageFrameReadyEventArgs e) =>
+                {
+                    KinectDepth.Source = e.ImageFrame.ToBitmapSource();
+                };
+                KinectGestureDetector.Initialize(KinectRuntime, HandleLeftSwipe, HandleRightSwipe, HandleHover);
+                KinectRuntime.Initialize(RuntimeOptions.UseDepth | RuntimeOptions.UseSkeletalTracking | RuntimeOptions.UseColor);
+                KinectRuntime.VideoStream.Open(ImageStreamType.Video, 2, ImageResolution.Resolution640x480, ImageType.Color);
+                KinectRuntime.DepthStream.Open(ImageStreamType.Depth, 2, ImageResolution.Resolution320x240, ImageType.Depth);
 
-            KinectRuntime.SkeletonEngine.TransformSmooth = true;
-            KinectRuntime.SkeletonEngine.SmoothParameters = new TransformSmoothParameters
-            {
-                Smoothing = 0.75f,
-                Correction = 0.1f,
-                Prediction = 0.1f,
-                JitterRadius = 0.05f,
-                MaxDeviationRadius = 0.04f
-            };
+                KinectRuntime.SkeletonEngine.TransformSmooth = true;
+                KinectRuntime.SkeletonEngine.SmoothParameters = new TransformSmoothParameters
+                {
+                    Smoothing = 0.75f,
+                    Correction = 0.1f,
+                    Prediction = 0.1f,
+                    JitterRadius = 0.05f,
+                    MaxDeviationRadius = 0.04f
+                };
+            }
+            catch (Exception) {}
         }
 
         private void InitializeMenu()
